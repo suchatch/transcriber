@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meeting Audio Transcriber</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Meeting Transcriber</h1>
+          <span class="sub-brand">Whisper + Hermes Agent</span>
+        </div>
+      </div>
+      <div id="status-badge" class="badge badge-idle">
+        <span class="badge-dot"></span>
+        <span id="status-text">พร้อมใช้งาน</span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button id="tab-live-btn" class="nav-tab active" data-tab="live">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        การประชุมสด
+      </button>
+      <button id="tab-settings-btn" class="nav-tab" data-tab="settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        ตั้งค่า
+      </button>
+    </nav>
+
+    <!-- Main Live Panel -->
+    <main id="panel-live" class="tab-panel active">
+      <!-- Active Meeting Info Card -->
+      <section class="card session-card">
+        <div class="session-info">
+          <div class="tab-indicator">
+            <span class="tab-dot"></span>
+            <span id="active-tab-title" class="tab-title">ตรวจจับแท็บปัจจุบัน...</span>
+          </div>
+          <div id="session-timer" class="session-timer">00:00:00</div>
+        </div>
+
+        <!-- VU Meter / Audio Waves -->
+        <div class="audio-visualizer-container">
+          <div class="sound-bars" id="sound-bars">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+          </div>
+          <div class="audio-label" id="audio-status-label">เสียงปกติ (Tab + Mic)</div>
+        </div>
+
+        <!-- Start / Stop Button -->
+        <button id="toggle-record-btn" class="btn btn-record btn-start">
+          <div class="btn-content">
+            <span class="record-icon"></span>
+            <span id="record-btn-text">เริ่มดักจับเสียง & แปลงข้อความ</span>
+          </div>
+        </button>
+      </section>
+
+      <!-- Transcripts Section -->
+      <section class="card transcript-card">
+        <div class="transcript-header">
+          <div class="transcript-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            ข้อความจากการประชุม (<span id="chunk-counter">0</span>)
+          </div>
+          <div class="transcript-actions">
+            <button id="copy-transcript-btn" class="icon-btn" title="คัดลอกทั้งหมด">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+            <button id="clear-transcript-btn" class="icon-btn" title="ล้างข้อความ">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="transcript-feed" class="transcript-feed">
+          <div id="empty-state" class="empty-state">
+            <div class="empty-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <p>ยังไม่มีข้อความถอดเสียง</p>
+            <small>กดปุ่ม "เริ่มดักจับเสียง" เพื่อแปลงเสียงแบบสด</small>
+          </div>
+        </div>
+
+        <!-- Send to Hermes Action Bar -->
+        <div class="hermes-action-bar">
+          <button id="send-hermes-btn" class="btn btn-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            <span>ส่งเข้า Hermes-Agent ทันที</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Settings Panel -->
+    <section id="panel-settings" class="tab-panel">
+      <form id="settings-form" class="settings-form">
+        <!-- STT Provider -->
+        <div class="form-group">
+          <label for="stt-provider">Speech-to-Text Provider</label>
+          <select id="stt-provider" class="form-control">
+            <option value="groq">Groq Whisper (แนะนำ: เร็วและฟรี/ถูกมาก)</option>
+            <option value="openai">OpenAI Whisper (whisper-1)</option>
+            <option value="custom">Custom Endpoint (Self-hosted)</option>
+          </select>
+        </div>
+
+        <!-- API Key -->
+        <div class="form-group">
+          <label for="api-key">STT API Key</label>
+          <div class="input-with-button">
+            <input type="password" id="api-key" class="form-control" placeholder="gsk_... หรือ sk-..." autocomplete="off">
+            <button type="button" id="toggle-key-visibility" class="icon-btn-toggle" title="แสดง/ซ่อนคีย์">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+          <small class="helper-text">คีย์จะถูกเก็บไว้ในเครื่องของคุณอย่างปลอดภัย</small>
+        </div>
+
+        <!-- Model -->
+        <div class="form-group" id="group-model">
+          <label for="model-name">Whisper Model</label>
+          <input type="text" id="model-name" class="form-control" value="whisper-large-v3" placeholder="whisper-large-v3">
+        </div>
+
+        <!-- Custom Endpoint (Hidden by default) -->
+        <div class="form-group" id="group-custom-endpoint" style="display: none;">
+          <label for="custom-endpoint">Custom STT Endpoint URL</label>
+          <input type="text" id="custom-endpoint" class="form-control" placeholder="http://localhost:8000/v1/audio/transcriptions">
+        </div>
+
+        <!-- Language & Chunk Interval -->
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="language">ภาษา (Language)</label>
+            <select id="language" class="form-control">
+              <option value="th" selected>ไทย (th)</option>
+              <option value="en">English (en)</option>
+              <option value="auto">Auto Detect</option>
+            </select>
+          </div>
+          <div class="form-group col-half">
+            <label for="chunk-interval">ช่วงเวลาอัดเสียง</label>
+            <select id="chunk-interval" class="form-control">
+              <option value="15">ทุก 15 วินาที</option>
+              <option value="30" selected>ทุก 30 วินาที</option>
+              <option value="60">ทุก 60 วินาที</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Mic Option -->
+        <div class="form-group checkbox-group">
+          <label class="switch-container">
+            <input type="checkbox" id="include-mic" checked>
+            <span class="switch-slider"></span>
+          </label>
+          <div class="switch-label">
+            <span class="label-title">รวมเสียงไมโครโฟนของคุณ (Mix Mic)</span>
+            <span class="label-desc">บันทึกทั้งเสียงคนอื่นในแท็บ และเสียงพูดของคุณเอง</span>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Hermes Webhook -->
+        <div class="form-group">
+          <label for="hermes-url">Hermes-Agent Webhook URL</label>
+          <input type="url" id="hermes-url" class="form-control" placeholder="https://your-hermes-domain.com/api/webhook/meeting">
+        </div>
+
+        <div class="form-group">
+          <label for="hermes-key">Hermes Secret Token (X-API-KEY)</label>
+          <input type="password" id="hermes-key" class="form-control" placeholder="YOUR_HERMES_SECRET_TOKEN" autocomplete="off">
+        </div>
+
+        <!-- Stream vs Summary -->
+        <div class="form-group checkbox-group">
+          <label class="switch-container">
+            <input type="checkbox" id="auto-send-hermes">
+            <span class="switch-slider"></span>
+          </label>
+          <div class="switch-label">
+            <span class="label-title">ส่งข้อความสดไป Hermes ทุก Chunk</span>
+            <span class="label-desc">หากปิดไว้ จะส่งสรุปเมื่อกดปุ่มหรือจบการประชุม</span>
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <button type="submit" id="save-settings-btn" class="btn btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          บันทึกการตั้งค่า
+        </button>
+      </form>
+    </section>
+
+    <!-- Global Toast Notification -->
+    <div id="toast" class="toast">
+      <span id="toast-message">ข้อความแจ้งเตือน</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

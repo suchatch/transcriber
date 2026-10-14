@@ -1,0 +1,42 @@
+# ---- Secrets / credentials (ห้าม commit) ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credential/
+*.json.bak
+
+# ---- OS junk ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Editors / IDEs ----
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- Backups ----
+*.bak
+*.bak-*
+*.orig
+*~
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+
+# ---- Node (ถ้ามี tooling ในอนาคต) ----
+node_modules/
+package-lock.json
+
+# ---- Build artifacts (ถ้าแพ็ก .zip/.crx) ----
+*.zip
+*.crx
+*.pem
+
+# ---- Local scratch ----
+tmp/
+temp/
